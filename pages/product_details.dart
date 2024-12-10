@@ -1,3 +1,5 @@
+import 'package:e_commerce/components/blur.dart';
+import 'package:e_commerce/pages/add_to_cart.dart';
 import 'package:e_commerce/services/product_services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   double scale = 1;
   int qty = 0;
   int availableQty = 0;
+  Color containerColor = Colors.transparent;
 
   @override
   void initState() {
@@ -26,6 +29,15 @@ class _ProductDetailsState extends State<ProductDetails> {
       if (fraction > 0.7) {
         setState(() {
           scale = fraction;
+        });
+      }
+      if (controller.offset > 300) {
+        setState(() {
+          containerColor = Colors.white;
+        });
+      } else {
+        setState(() {
+          containerColor = Colors.transparent;
         });
       }
     });
@@ -62,7 +74,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   void addToCart(String productName, double price, String description,
       String businessName, int quantity, String image, String productId) async {
     if (await ProductServices().addToCart(productName, price, description,
-        businessName, quantity, image, productId, availableQty)) {
+        businessName, quantity, image, productId)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           elevation: 0,
@@ -73,19 +85,30 @@ class _ProductDetailsState extends State<ProductDetails> {
                 color: Colors.grey[600]),
             padding: const EdgeInsets.all(8),
             margin: const EdgeInsets.all(12),
-            child: Row(children: [
-              const Text("Item added to cart"),
-              ElevatedButton(
-                style: const ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(Colors.amber),
-                    foregroundColor: WidgetStatePropertyAll(Colors.white)),
-                onPressed: () {},
-                child: const Text('Open Cart'),
-              )
-            ]),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  const Text("Item added to cart"),
+                  ElevatedButton(
+                    style: const ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(Colors.amber),
+                        foregroundColor: WidgetStatePropertyAll(Colors.white)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AddToCart()),
+                      );
+                    },
+                    child: const Text('Open Cart'),
+                  )
+                ]),
           ),
         ),
       );
+      setState(() {
+        qty = 0;
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -140,6 +163,9 @@ class _ProductDetailsState extends State<ProductDetails> {
                           images[0],
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, object, trace) {
+                            return const Text("Image cannot be Found");
+                          },
                         ),
                       ),
                     );
@@ -167,263 +193,277 @@ class _ProductDetailsState extends State<ProductDetails> {
                 Container(
                   height: 250,
                 ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+                Blur(
+                  sigmaX: 10,
+                  sigmaY: 10,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      border: Border.all(
+                        width: 2,
+                        color: Colors.white,
+                      ),
+                      color: containerColor,
                     ),
-                    color: Colors.white,
-                  ),
-                  height: 1000,
-                  width: double.infinity,
-                  child: StreamBuilder(
-                    stream: ProductServices().getProducts(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        List products = [];
-                        snapshot.data!.docs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          if (data['uid'] == widget.productId) {
-                            products.add([
-                              data['productName'],
-                              data['price'],
-                              data['description'],
-                              data['businessName'],
-                              data['quantity'],
-                              data['uid'],
-                              data['image'],
-                            ]);
-                            availableQty = data['quantity'];
-                            if (qty > availableQty) {
-                              qty = availableQty;
+                    height: 1000,
+                    width: double.infinity,
+                    child: StreamBuilder(
+                      stream: ProductServices().getProducts(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          List products = [];
+                          snapshot.data!.docs.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            if (data['uid'] == widget.productId) {
+                              products.add([
+                                data['productName'],
+                                data['price'],
+                                data['description'],
+                                data['businessName'],
+                                data['quantity'],
+                                data['uid'],
+                                data['image'],
+                              ]);
+                              availableQty = data['quantity'];
+                              if (qty > availableQty) {
+                                qty = availableQty;
+                              }
                             }
-                          }
-                        }).toList();
-                        return Column(
-                          children: [
-                            Text(
-                              products[0][0],
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Divider(
-                              color: Colors.black,
-                            ),
-                            ListTile(
-                              title: Text('Product: ${products[0][0]}'),
-                            ),
-                            ListTile(
-                              title: Text('Price: GHc${products[0][1]}'),
-                            ),
-                            ListTile(
-                              title: Text('Description: ${products[0][2]}'),
-                            ),
-                            ListTile(
-                              title: Text('Company: ${products[0][3]}'),
-                            ),
-                            ListTile(
-                              title:
-                                  Text('Quantity available: ${products[0][4]}'),
-                            ),
-                            ListTile(
-                              title: Row(
-                                children: [
-                                  const Text(
-                                    "QTY: ",
-                                  ),
-                                  quantity()
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            MaterialButton(
-                              minWidth: double.infinity,
-                              padding: const EdgeInsets.all(15),
-                              color: Colors.amber,
-                              onPressed: () {
-                                if (qty > 0) {
-                                  addToCart(
-                                    products[0][0],
-                                    products[0][1],
-                                    products[0][2],
-                                    products[0][3],
-                                    qty,
-                                    products[0][6],
-                                    products[0][5],
-                                  );
-                                }
-                              },
-                              child: Text(
-                                availableQty != 0
-                                    ? 'Add to Cart'
-                                    : "Out of Stock",
+                          }).toList();
+                          return Column(
+                            children: [
+                              Text(
+                                products[0][0],
                                 style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 80,
-                            ),
-                            const Text(
-                              "Other Products",
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                            const Divider(
-                              color: Colors.black,
-                            ),
-                            StreamBuilder(
-                              stream: ProductServices().getProducts(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  List products = [];
-                                  List quantity = [];
-                                  snapshot.data!.docs.map((doc) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    if (data['uid'] != widget.productId) {
-                                      products.add([
-                                        data['productName'],
-                                        data['price'],
-                                        data['description'],
-                                        data['businessName'],
-                                        data['uid'],
-                                      ]);
-                                      quantity.add(
-                                          [data['quantity'], data['image']]);
-                                      availableQty = data['quantity'];
-                                      if (qty > availableQty) {
-                                        qty = availableQty;
+                              const Divider(
+                                color: Colors.black,
+                              ),
+                              ListTile(
+                                title: Text('Product: ${products[0][0]}'),
+                              ),
+                              ListTile(
+                                title: Text('Price: GHc${products[0][1]}'),
+                              ),
+                              ListTile(
+                                title: Text('Description: ${products[0][2]}'),
+                              ),
+                              ListTile(
+                                title: Text('Company: ${products[0][3]}'),
+                              ),
+                              ListTile(
+                                title: Text(
+                                    'Quantity available: ${products[0][4]}'),
+                              ),
+                              ListTile(
+                                title: Row(
+                                  children: [
+                                    const Text(
+                                      "QTY: ",
+                                    ),
+                                    quantity()
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              MaterialButton(
+                                minWidth: double.infinity,
+                                padding: const EdgeInsets.all(15),
+                                color: Colors.amber,
+                                onPressed: () {
+                                  if (qty > 0) {
+                                    addToCart(
+                                      products[0][0],
+                                      products[0][1],
+                                      products[0][2],
+                                      products[0][3],
+                                      qty,
+                                      products[0][6],
+                                      products[0][5],
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  availableQty != 0
+                                      ? 'Add to Cart'
+                                      : "Out of Stock",
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 80,
+                              ),
+                              const Text(
+                                "Other Products",
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              const Divider(
+                                color: Colors.black,
+                              ),
+                              StreamBuilder(
+                                stream: ProductServices().getProducts(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    List products = [];
+                                    List quantity = [];
+                                    snapshot.data!.docs.map((doc) {
+                                      final data =
+                                          doc.data() as Map<String, dynamic>;
+                                      if (data['uid'] != widget.productId) {
+                                        products.add([
+                                          data['productName'],
+                                          data['price'],
+                                          data['description'],
+                                          data['businessName'],
+                                          data['uid'],
+                                        ]);
+                                        quantity.add(
+                                            [data['quantity'], data['image']]);
+                                        availableQty = data['quantity'];
+                                        if (qty > availableQty) {
+                                          qty = availableQty;
+                                        }
                                       }
-                                    }
-                                  }).toList();
-                                  if (products.isNotEmpty) {
-                                    return SizedBox(
-                                      height: 300,
-                                      child: ListView.builder(
-                                        itemCount: products.length,
-                                        scrollDirection: Axis.horizontal,
-                                        itemBuilder: (context, i) {
-                                          return Card(
-                                            color: Colors.amberAccent,
-                                            elevation: 10,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(12.0),
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          ProductDetails(
-                                                        productId: products[i]
-                                                            [4],
+                                    }).toList();
+                                    if (products.isNotEmpty) {
+                                      return SizedBox(
+                                        height: 300,
+                                        child: ListView.builder(
+                                          itemCount: products.length,
+                                          scrollDirection: Axis.horizontal,
+                                          itemBuilder: (context, i) {
+                                            return Card(
+                                              color: Colors.amberAccent,
+                                              elevation: 10,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12.0),
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.pop(context);
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ProductDetails(
+                                                          productId: products[i]
+                                                              [4],
+                                                        ),
                                                       ),
+                                                    );
+                                                  },
+                                                  child: SizedBox(
+                                                    width: 200,
+                                                    child: Column(
+                                                      children: [
+                                                        ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                            9,
+                                                          ),
+                                                          child: SizedBox(
+                                                            height: 110,
+                                                            width:
+                                                                double.infinity,
+                                                            child:
+                                                                Image.network(
+                                                              quantity[i][1],
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          products[i][3],
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                        const Divider(
+                                                          color: Colors.black,
+                                                        ),
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              'Product: ${products[i][0]}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Price: Ghc${products[i][1].toString()}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Description: ${products[i][2]}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Qty Available: ${quantity[i][0]}',
+                                                            ),
+                                                          ],
+                                                        )
+                                                      ],
                                                     ),
-                                                  );
-                                                },
-                                                child: SizedBox(
-                                                  width: 200,
-                                                  child: Column(
-                                                    children: [
-                                                      ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                          9,
-                                                        ),
-                                                        child: SizedBox(
-                                                          height: 110,
-                                                          width:
-                                                              double.infinity,
-                                                          child: Image.network(
-                                                            quantity[i][1],
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        products[i][3],
-                                                        style: const TextStyle(
-                                                          fontSize: 18,
-                                                        ),
-                                                      ),
-                                                      const Divider(
-                                                        color: Colors.black,
-                                                      ),
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            'Product: ${products[i][0]}',
-                                                            style:
-                                                                const TextStyle(
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            'Price: Ghc${products[i][1].toString()}',
-                                                            style:
-                                                                const TextStyle(
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            'Description: ${products[i][2]}',
-                                                            style:
-                                                                const TextStyle(
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            'Qty Available: ${quantity[i][0]}',
-                                                          ),
-                                                        ],
-                                                      )
-                                                    ],
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  } else {
-                                    return const Text("No Available Products");
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    } else {
+                                      return const Text(
+                                          "No Available Products");
+                                    }
                                   }
-                                }
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
-                                }
-                                return const Text("An Error Occured");
-                              },
-                            ),
-                          ],
-                        );
-                      }
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      }
-                      return const Text("Error");
-                    },
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  }
+                                  return const Text("An Error Occured");
+                                },
+                              ),
+                            ],
+                          );
+                        }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        return const Text("Error");
+                      },
+                    ),
                   ),
                 )
               ],

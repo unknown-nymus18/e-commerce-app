@@ -44,6 +44,7 @@ class _CustomerPageState extends State<CustomerPage> {
               leading: const Icon(Icons.logout),
               title: const Text("Logout"),
               onTap: () {
+                Navigator.pop(context);
                 showDialog(
                     context: context,
                     builder: (context) {
@@ -149,6 +150,6 @@ class _CustomerPageState extends State<CustomerPage> {
             ],
           ),
         ),
-        body: const [ShopPage(), CartPage()][index]);
+        body: [const ShopPage(), CartPage()][index]);
   }
 }

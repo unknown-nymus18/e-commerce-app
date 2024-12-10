@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
@@ -18,15 +20,6 @@ class ProductServices {
       final bytes = utf8.encode(uniqueString);
       final hash = sha256.convert(bytes);
 
-      // await _firestore.collection('products').add({
-      //   'productName': productName,
-      //   'price': price,
-      //   'description': description,
-      //   'uid': hash.toString(),
-      //   'businessName': businessName,
-      //   'quantity': quantity,
-      //   'image': image
-      // });
       _firestore.collection('products').doc(hash.toString()).set({
         'productName': productName,
         'price': price,
@@ -42,21 +35,23 @@ class ProductServices {
     }
   }
 
+  final Timestamp timeStamp = Timestamp.now();
+
   Future<bool> addToCart(
-      String productName,
-      double price,
-      String description,
-      String businessName,
-      int quantity,
-      String image,
-      String productId,
-      int available) async {
+    String productName,
+    double price,
+    String description,
+    String businessName,
+    int quantity,
+    String image,
+    String productId,
+  ) async {
     try {
       await _firestore
           .collection('users')
           .doc(_auth.currentUser!.uid)
           .collection('cart')
-          .doc(productId)
+          .doc(productId + timeStamp.toString())
           .set({
         'productName': productName,
         'price': price,
@@ -64,12 +59,25 @@ class ProductServices {
         'uid': productId,
         'businessName': businessName,
         'quantity': quantity,
-        'image': image
+        'image': image,
+        'timestamp': timeStamp,
       });
 
-      await _firestore.collection('products').doc(productId).update({
-        'quantity': available - quantity,
-      });
+      DocumentSnapshot docQuery =
+          await _firestore.collection('products').doc(productId).get();
+
+      if (docQuery.exists) {
+        Map<String, dynamic>? data = docQuery.data() as Map<String, dynamic>?;
+        if (data == null) return false;
+        int? available = data['quantity'];
+
+        if (available == null) return false;
+
+        await _firestore.collection('products').doc(productId).update({
+          'quantity': available - quantity,
+        });
+      }
+
       return true;
     } catch (e) {
       return true;
@@ -81,6 +89,23 @@ class ProductServices {
         .collection('users')
         .doc(_auth.currentUser!.uid)
         .collection('cart')
+        .orderBy('timestamp', descending: true)
         .snapshots();
+  }
+
+  Future<bool> deleteFromCart(String productID) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('cart')
+          .doc(productID)
+          .delete();
+      print(_auth.currentUser!.uid);
+      print(productID);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

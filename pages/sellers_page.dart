@@ -8,8 +8,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 class SellersPage extends StatefulWidget {
-  String? businessName;
-  SellersPage({super.key, this.businessName});
+  final String? businessName;
+  const SellersPage({super.key, this.businessName});
 
   @override
   State<SellersPage> createState() => _SellersPageState();
@@ -66,90 +66,8 @@ class _SellersPageState extends State<SellersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.amber,
         onPressed: () {
-          //   showDialog(
-          //     context: context,
-          //     builder: (context) {
-          //       return AlertDialog(
-          //         content: SizedBox(
-          //           height: 200,
-          //           child: Column(
-          //             children: [
-          //               TextField(
-          //                 controller: productName,
-          //               ),
-          //               TextField(controller: price),
-          //               TextField(controller: description),
-          //               qty()
-          //             ],
-          //           ),
-          //         ),
-          //         actions: [
-          //           IconButton(
-          //             onPressed: () async {
-          //               if (await ProductServices().addProduct(
-          //                     productName.text,
-          //                     double.parse(price.text),
-          //                     description.text,
-          //                     widget.businessName!,
-          //                     int.parse(qtyController.text),
-          //                   ) ==
-          //                   true) {
-          //                 Navigator.pop(context);
-          //                 ScaffoldMessenger.of(context).showSnackBar(
-          //                   SnackBar(
-          //                     duration: const Duration(seconds: 7),
-          //                     backgroundColor: Colors.transparent,
-          //                     content: Blur(
-          //                       sigmaX: 10,
-          //                       sigmaY: 10,
-          //                       child: Container(
-          //                         decoration: BoxDecoration(
-          //                           borderRadius: BorderRadius.circular(12),
-          //                         ),
-          //                         padding: const EdgeInsets.all(8),
-          //                         margin: const EdgeInsets.all(8),
-          //                         child:
-          //                             const Text("Product uploaded Successfully"),
-          //                       ),
-          //                     ),
-          //                   ),
-          //                 );
-          //                 price.clear();
-          //                 description.clear();
-          //                 productName.clear();
-          //               } else {
-          //                 Navigator.pop(context);
-          //                 ScaffoldMessenger.of(context).showSnackBar(
-          //                   SnackBar(
-          //                     duration: const Duration(seconds: 7),
-          //                     backgroundColor: Colors.transparent,
-          //                     content: Blur(
-          //                       sigmaX: 10,
-          //                       sigmaY: 10,
-          //                       child: Container(
-          //                         decoration: BoxDecoration(
-          //                           borderRadius: BorderRadius.circular(12),
-          //                         ),
-          //                         padding: const EdgeInsets.all(8),
-          //                         margin: const EdgeInsets.all(8),
-          //                         child: const Text("Product uploaded Error"),
-          //                       ),
-          //                     ),
-          //                   ),
-          //                 );
-          //                 price.clear();
-          //                 description.clear();
-          //                 productName.clear();
-          //               }
-          //             },
-          //             icon: Text("Add"),
-          //           )
-          //         ],
-          //       );
-          //     },
-          //   );
-
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -159,7 +77,10 @@ class _SellersPageState extends State<SellersPage> {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(
+          Icons.add,
+          size: 35,
+        ),
       ),
       appBar: AppBar(
         centerTitle: true,

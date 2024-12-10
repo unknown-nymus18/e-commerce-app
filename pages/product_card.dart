@@ -33,6 +33,9 @@ class ProductCard extends StatelessWidget {
               child: Image.network(
                 image,
                 fit: BoxFit.cover,
+                errorBuilder: (context, object, trace) {
+                  return const Text('No image Found');
+                },
               ),
             ),
           ),
