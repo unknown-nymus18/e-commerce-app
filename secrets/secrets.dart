@@ -1,1 +1,0 @@
-const cloudinaryName = 'dsptxbejo';
