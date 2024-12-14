@@ -71,10 +71,18 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 
-  void addToCart(String productName, double price, String description,
-      String businessName, int quantity, String image, String productId) async {
+  void addToCart(
+    String productName,
+    double price,
+    String description,
+    String businessName,
+    int quantity,
+    String image,
+    String productId,
+    String busId,
+  ) async {
     if (await ProductServices().addToCart(productName, price, description,
-        businessName, quantity, image, productId)) {
+        businessName, quantity, image, productId, busId)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           elevation: 0,
@@ -178,7 +186,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                     height: 300,
                     width: double.infinity,
                     child: const Center(
-                      child: Text("Not image found"),
+                      child: Text("No image found"),
                     ),
                   );
                 },
@@ -197,7 +205,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                   sigmaX: 10,
                   sigmaY: 10,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(
@@ -217,8 +225,10 @@ class _ProductDetailsState extends State<ProductDetails> {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           List products = [];
+
                           snapshot.data!.docs.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
+
                             if (data['uid'] == widget.productId) {
                               products.add([
                                 data['productName'],
@@ -228,6 +238,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                 data['quantity'],
                                 data['uid'],
                                 data['image'],
+                                data['busId']
                               ]);
                               availableQty = data['quantity'];
                               if (qty > availableQty) {
@@ -290,6 +301,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                                       qty,
                                       products[0][6],
                                       products[0][5],
+                                      products[0][7],
                                     );
                                   }
                                 },

@@ -34,7 +34,9 @@ class ProductCard extends StatelessWidget {
                 image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, object, trace) {
-                  return const Text('No image Found');
+                  return const Center(
+                    child: Text('No image Found'),
+                  );
                 },
               ),
             ),

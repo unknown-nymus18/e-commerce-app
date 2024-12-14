@@ -20,7 +20,7 @@ class _AuthGateState extends State<AuthGate> {
           if (snapshot.hasData) {
             return const HomePage();
           } else {
-            return LoginPage();
+            return const LoginPage();
           }
         },
       ),

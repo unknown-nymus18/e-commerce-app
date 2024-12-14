@@ -13,7 +13,7 @@ class _AddToCartState extends State<AddToCart> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: CartPage(),
+      body: const CartPage(),
     );
   }
 }

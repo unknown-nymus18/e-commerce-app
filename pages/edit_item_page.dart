@@ -1,23 +1,39 @@
 import 'dart:io';
+
+import 'package:e_commerce/components/blur.dart';
 import 'package:e_commerce/services/cloudinary_services.dart';
 import 'package:e_commerce/services/product_services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-class ProductUpload extends StatefulWidget {
-  final String businessName;
-  const ProductUpload({super.key, required this.businessName});
+class EditItemPage extends StatefulWidget {
+  final String uid;
+  final String name;
+  final double price;
+  final String description;
+  final int quantity;
+  const EditItemPage({
+    super.key,
+    required this.uid,
+    required this.description,
+    required this.name,
+    required this.price,
+    required this.quantity,
+  });
 
   @override
-  State<ProductUpload> createState() => _ProductUploadState();
+  State<EditItemPage> createState() => _EditItemPageState();
 }
 
-class _ProductUploadState extends State<ProductUpload> {
+class _EditItemPageState extends State<EditItemPage> {
   TextEditingController name = TextEditingController();
+
   TextEditingController price = TextEditingController();
+
   TextEditingController qtyController = TextEditingController();
+
   TextEditingController description = TextEditingController();
 
   File? _image;
@@ -25,17 +41,26 @@ class _ProductUploadState extends State<ProductUpload> {
   @override
   void initState() {
     setState(() {
-      if (qtyController.text.isEmpty) {
-        qtyController.text = '0';
-      }
-      if (price.text.isEmpty) {
-        price.text = '0';
-      }
+      qtyController.text = widget.quantity.toString();
+      price.text = widget.price.toString();
+      name.text = widget.name;
+      description.text = widget.description;
     });
     super.initState();
   }
 
   void openFilePicker() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      }
+    });
+  }
+
+  void openCamera() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -52,8 +77,7 @@ class _ProductUploadState extends State<ProductUpload> {
           price.text.isEmpty ||
           double.parse(price.text) <= 0 ||
           int.parse(qtyController.text) == 0 ||
-          description.text.isEmpty ||
-          _image == null) {
+          description.text.isEmpty) {
         return false;
       }
       return true;
@@ -62,19 +86,9 @@ class _ProductUploadState extends State<ProductUpload> {
     }
   }
 
-  void openCamera() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.camera);
-
-    setState(() {
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-      }
-    });
-  }
-
-  void uploadImage() async {
-    if (valid()) {
+  void updateProduct() async {
+    bool? uploaded;
+    if (_image != null) {
       final platformFile = PlatformFile(
         name: _image!.path.split('/').last,
         size: _image!.lengthSync(),
@@ -86,60 +100,40 @@ class _ProductUploadState extends State<ProductUpload> {
       );
 
       String url = await uploadToCloudinary(filePickerResult);
-
-      if (url.isNotEmpty) {
-        bool uploadProduct = await ProductServices().addProduct(
+      uploaded = await ProductServices().editProduct(
+          widget.uid,
           name.text,
-          double.parse(price.text),
           description.text,
-          widget.businessName,
+          double.parse(price.text),
           int.parse(qtyController.text),
-          url,
-        );
-
-        if (uploadProduct == true) {
-          name.clear();
-          price.clear();
-          description.clear();
-          qtyController.clear();
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              content: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[600],
-                ),
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.all(12),
-                child: const Text('Product successfuly uploaded'),
-              ),
-            ),
-          );
-        } else {
-          print("Error");
-        }
-      }
+          url);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          content: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[600],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber),
-            ),
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.all(12),
-            child: const Text("Failed to upload product"),
-          ),
-        ),
+      uploaded = await ProductServices().editProduct(
+        widget.uid,
+        name.text,
+        description.text,
+        double.parse(price.text),
+        int.parse(qtyController.text),
       );
     }
+
+    if (uploaded == true) {
+      Navigator.pop(context);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        content: Container(
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12), color: Colors.grey[600]),
+          margin: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(12),
+          child: Text(uploaded ? 'Edited successfully' : "There was a errr"),
+        ),
+      ),
+    );
   }
 
   Widget field(
@@ -220,7 +214,10 @@ class _ProductUploadState extends State<ProductUpload> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: const Text("Edit information"),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -289,12 +286,48 @@ class _ProductUploadState extends State<ProductUpload> {
                 borderRadius: BorderRadius.circular(12),
                 child: MaterialButton(
                   textColor: Colors.white,
-                  onPressed: uploadImage,
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return Blur(
+                            sigmaX: 7,
+                            sigmaY: 7,
+                            child: AlertDialog(
+                              title: const Text('Update Product'),
+                              content: const Text(
+                                  "Do you want to update the project?"),
+                              actions: [
+                                MaterialButton(
+                                  color: Colors.amber,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                                MaterialButton(
+                                  color: Colors.amber,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    updateProduct();
+                                  },
+                                  child: const Text(
+                                    "Yes",
+                                  ),
+                                )
+                              ],
+                            ),
+                          );
+                        });
+                  },
                   color: Colors.amber,
                   minWidth: double.infinity,
                   padding: const EdgeInsets.all(16),
                   child: const Text(
-                    "Upload Product",
+                    "Update Product",
                     style: TextStyle(
                       fontSize: 16,
                     ),

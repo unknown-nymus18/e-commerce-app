@@ -77,9 +77,9 @@ class ShopPage extends StatelessWidget {
                   );
                 }
                 if (snapshots.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
-                return Text("Hello");
+                return const Text("Hello");
               },
             ),
           ),

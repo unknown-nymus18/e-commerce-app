@@ -3,15 +3,20 @@ import 'package:e_commerce/services/product_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class CartPage extends StatelessWidget {
-  CartPage({
+class CartPage extends StatefulWidget {
+  const CartPage({
     super.key,
   });
 
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
   double totalPrice = 0;
 
   Widget cartCard(String businessName, String name, String price, String desc,
-      int qty, String img, String id, BuildContext context) {
+      int qty, String img, String id, BuildContext context, String cartId) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Slidable(
@@ -25,7 +30,7 @@ class CartPage extends StatelessWidget {
                 color: Colors.red,
                 child: Center(
                   child: IconButton(
-                    onPressed: () => deleteFromCart(context, id),
+                    onPressed: () => deleteFromCart(context, cartId),
                     icon: const Icon(Icons.delete),
                   ),
                 ),
@@ -45,7 +50,7 @@ class CartPage extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    color: Colors.white,
+                    color: Colors.grey[50],
                     width: 40,
                   ),
                   const SizedBox(
@@ -194,68 +199,129 @@ class CartPage extends StatelessWidget {
                   data['quantity'],
                   data['image'],
                   data['uid'],
+                  data['cartId'],
+                  data['busId'],
                 ]);
                 totalPrice = 0;
               }).toList();
               return ListView.builder(
-                  itemCount: products.length,
-                  itemBuilder: (context, i) {
-                    totalPrice += products[i][1] * products[i][4];
-                    if (i == products.length - 1) {
-                      return Column(
-                        children: [
-                          cartCard(
-                            products[i][3],
-                            products[i][0],
-                            products[i][1].toString(),
-                            products[i][2],
-                            products[i][4],
-                            products[i][5],
-                            products[i][6],
-                            context,
-                          ),
-                          ListTile(
-                            leading: const Text(
-                              'Total Price',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            trailing: Text(
-                              'GHc$totalPrice',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+                itemCount: products.length,
+                itemBuilder: (context, i) {
+                  totalPrice += products[i][1] * products[i][4];
+                  if (i == products.length - 1) {
+                    return Column(
+                      children: [
+                        cartCard(
+                          products[i][3],
+                          products[i][0],
+                          products[i][1].toString(),
+                          products[i][2],
+                          products[i][4],
+                          products[i][5],
+                          products[i][6],
+                          context,
+                          products[i][7],
+                        ),
+                        ListTile(
+                          leading: const Text(
+                            'Total Price',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
                           ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: MaterialButton(
-                              padding: const EdgeInsets.all(12),
-                              color: Colors.amberAccent,
-                              textColor: Colors.white,
-                              onPressed: () {},
-                              child: const Text(
-                                "Place Order",
-                                style: TextStyle(fontSize: 16),
-                              ),
+                          trailing: Text(
+                            'GHc${totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
-                          )
-                        ],
-                      );
-                    }
-                    return cartCard(
-                        products[i][3],
-                        products[i][0],
-                        products[i][1].toString(),
-                        products[i][2],
-                        products[i][4],
-                        products[i][5],
-                        products[i][6],
-                        context);
-                  });
+                          ),
+                        ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: MaterialButton(
+                            padding: const EdgeInsets.all(12),
+                            color: Colors.amberAccent,
+                            textColor: Colors.white,
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return Blur(
+                                    sigmaX: 7,
+                                    sigmaY: 7,
+                                    child: AlertDialog(
+                                      title: const Text("Place Order"),
+                                      content: const Text(
+                                          'Do you want to order items?'),
+                                      actions: [
+                                        MaterialButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          color: Colors.amber,
+                                          child: const Text(
+                                            "Cancel",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                        MaterialButton(
+                                          color: Colors.amber,
+                                          onPressed: () async {
+                                            Navigator.pop(context);
+                                            if (await ProductServices()
+                                                    .placeOrder(products) ==
+                                                true) {
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Container(
+                                                    margin:
+                                                        const EdgeInsets.all(
+                                                            15),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            12),
+                                                    child: const Text(
+                                                      "Failed to order items",
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: const Text('Yes'),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: const Text(
+                              "Place Order",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        )
+                      ],
+                    );
+                  }
+                  return cartCard(
+                    products[i][3],
+                    products[i][0],
+                    products[i][1].toString(),
+                    products[i][2],
+                    products[i][4],
+                    products[i][5],
+                    products[i][6],
+                    context,
+                    products[i][7],
+                  );
+                },
+              );
             }
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(

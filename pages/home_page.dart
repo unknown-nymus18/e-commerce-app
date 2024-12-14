@@ -1,9 +1,6 @@
-// import 'package:e_commerce/pages/customer.dart';
 import 'package:e_commerce/pages/customer_page.dart';
 import 'package:e_commerce/pages/sellers_page.dart';
 import 'package:e_commerce/services/auth_service.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -13,20 +10,6 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        // child: Column(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: [
-        //     Text(
-        //       FirebaseAuth.instance.currentUser!.email.toString(),
-        //     ),
-        //     MaterialButton(
-        //       onPressed: () {
-        //         AuthService().signOut();
-        //       },
-        //       child: const Text('SignOut'),
-        //     )
-        //   ],
-        // ),
         child: StreamBuilder(
           stream: AuthService().getUsers(),
           builder: (context, snapshots) {
